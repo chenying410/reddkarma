@@ -1,0 +1,192 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "linux-arm64-openssl-1.1.x", "rhel-openssl-3.0.x"]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String?
+  userName      String?
+  email         String   @unique
+  password      String?
+  image         String?
+  emailVerified DateTime?
+  fullName      String?
+  telegram      String?
+  role          Role      @default(user)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+
+  subscriptions Subscription[]
+  transactions  Transaction[]
+  affiliates    Affiliate[]
+  admin_logs    AdminLog[]
+  search_logs   SearchLog[]
+  notifications Notification[]
+}
+
+enum Role {
+  user
+  admin
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String  @unique
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  role         Role
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id          Int       @id @default(autoincrement())
+  userId      String
+  status      Status    @default(active)
+  planId      Int
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  @@map("subscriptions")
+}
+
+enum Status {
+  active
+  expired
+  cancelled
+}
+
+model Plan {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(255)
+  price         Decimal  @db.Decimal(10, 2)
+  durationDays  Int
+  benefits      Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+  @@map("plans")
+}
+
+model Transaction {
+  id              Int       @id @default(autoincrement())
+  userId          String
+  description     String
+  amount          Decimal   @db.Decimal(10, 2)
+  status          tStatus   @default(pending)
+  transactionDate DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("transactions")
+}
+
+enum tStatus {
+  completed
+  pending
+  failed
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  message   String   @db.Text
+  type      Type     @default(personal)
+  status    nStatus  @default(unread)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("notifications")
+}
+
+enum Type {
+  global
+  personal
+}
+
+enum nStatus {
+  read
+  unread
+}
+
+model Affiliate {
+  id            Int      @id @default(autoincrement())
+  userId        String
+  referralLink  String   @db.VarChar(255)
+  referrals     Int      @default(0)
+  commission    Decimal  @db.Decimal(10, 2) @default(0.00)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("affiliates")
+}
+
+model FAQ {
+  id          Int      @id @default(autoincrement())
+  question    String   @db.Text
+  answer      String   @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model AdminLog {
+  id        Int      @id @default(autoincrement())
+  adminId   String
+  action    String   @db.Text
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  @@map("admin_logs")
+}
+
+model SearchLog {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  searchTerm  String   @db.VarChar(255)
+  status      lStatus
+  response    String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("search_logs")
+}
+
+enum lStatus {
+  success
+  failure
+}
