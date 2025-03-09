@@ -10,6 +10,7 @@ import CustomAvatar from '@core/components/mui/Avatar'
 import frontCommonStyles from './front-styles.module.css'
 import styles from './styles.module.css'
 import Image from 'next/image';
+import { stripe_auth } from '@/libs/stripe'
 const PricingPlan = () => {
 
   const [plans, setPlans] = useState([]);
@@ -90,15 +91,24 @@ const PricingPlan = () => {
 
   const handleClick = async (e, plan) => {
     const clickedId = e.target.id;
-    console.log(plan);
-    // setLoading(true);
-    // setClickedId(clickedId);
-
+      const { client_secret: clientSecret } = await stripe_auth.paymentIntents.create({
+        amount:Number(plan.price)*100,
+        currency: 'usd',
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      })
+    
     // // handle subscription action
     if (plan) {
-        const url = `/${locale}/subscription/checkout?planId=${plan.id}`;
+      // if(plan.id !==1) {
+        const url = `/${locale}/subscription/checkout?planId=${plan.id}&clientSecret=${clientSecret}`;
         router.push(url);
-      // else if (session) {
+      // } else {
+      //   if (!session) {
+      //     setLoading(false);
+      //     return;
+      //   }
       //   const user = session.user;
       //   const userId = user?.id;
       //   const description = "Subscription Upgrade From 'Free' to 'Basic'";
@@ -109,6 +119,7 @@ const PricingPlan = () => {
       //     amount: amount,
       //     status: 'Completed',
       //   }
+      //   console.log(data)
       //   const apiUrl = `/api/transaction`;
       //   const res = await fetch(apiUrl, {
       //     method: "POST",
@@ -126,10 +137,12 @@ const PricingPlan = () => {
       //       closeOnClick: true,
       //       pauseOnHover: true,
       //       draggable: true,
+      //       progress: undefined,
       //       theme: "light",
       //     });
       //     await handleSubscriptionAction(user, plan);
-      //   } else {
+      //   }
+      //   else {
       //     toast.error(resData.error.message, {
       //       position: "top-right",
       //       autoClose: 5000,
@@ -137,13 +150,17 @@ const PricingPlan = () => {
       //       closeOnClick: true,
       //       pauseOnHover: true,
       //       draggable: true,
+      //       progress: undefined,
       //       theme: "light",
       //     });
+      //     setLoading(false);
+      //     return;
       //   }
-      // }
+      // } 
     }
     // setLoading(false);
   }
+
 
   useEffect(() => {
     getCurrentPlanId();

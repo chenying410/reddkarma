@@ -26,8 +26,6 @@ const [users, setUsers] = useState([]);
       fetchData();
     }, []);
 
-    console.log(users);
-
   return (
     <section className='plb-[30px] bg-backgroundPaper'>
       <div className={frontCommonStyles.layoutSpacing}>
