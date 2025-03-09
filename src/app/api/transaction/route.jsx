@@ -4,7 +4,8 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function POST(req) {
-  const { userId, description, amount, status, } = await req.json();
+  const { userId, description, amount, status } = await req.json();
+  console.log(status,'status')
   try {
     //
     const now = new Date();
@@ -13,7 +14,7 @@ export async function POST(req) {
         userId: userId,
         description: description,
         amount: Number.parseFloat(amount),
-        status: "pending",
+        status: status,
         transactionDate: now,
         updatedAt: now,
       }

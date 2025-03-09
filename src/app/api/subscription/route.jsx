@@ -77,3 +77,40 @@ export async function POST(req) {
     return respond(false, error.message, 500);
   }
 }
+
+export async function GET(req) {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+  try {
+    const currentSubscription = await prisma.subscription.findFirst({
+        where:{
+          userId
+        }
+    });
+
+    return NextResponse.json(
+      {
+        success: {
+          message: "Fetch data successfully!"
+        },
+        data: currentSubscription,
+      },
+      {
+        status: 200,
+        statusText: 'OK'
+      }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: {
+          message: 'An unexpected error occurred. \n' + error
+        }
+      },
+      {
+        status: 500,
+        statusText: 'Internal Server Error'
+      }
+    );
+  }
+}

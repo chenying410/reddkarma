@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { getSession, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { CircularProgress, Grid2, Card, Typography, CardContent, Button } from '@mui/material';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import classnames from 'classnames'
 import CustomAvatar from '@core/components/mui/Avatar'
 import frontCommonStyles from './front-styles.module.css'
@@ -23,11 +23,22 @@ const PricingPlan = () => {
 
   const params = useParams();
   const { lang: locale } = params;
+  useEffect(() => {
+    const userId = session?.user?.id;
+    const fetchUser = async () => {
+      const response = await fetch(`/api/subscription?userId=${userId}`);
+      const data = await response.json();
+      setCurrentPlanId(data?.data?.planId);
+    };
 
-  const getCurrentPlanId = useCallback(() => {
-    const planId = session?.user?.subscription?.planId;
-    setCurrentPlanId(planId || -100);
-  }, [session]);
+    fetchUser();
+  }, [session, status]);
+  const getCurrentPlanId = async () => {
+      const userId = session?.user?.id;
+      const response = await fetch(`/api/subscription?userId=${userId}`);
+      const data = await response.json();
+      setCurrentPlanId(data?.data?.planId);
+  };
 
   const getCurrentPlanStatus = () => {
     const status = session?.user?.subscription?.status;
@@ -91,80 +102,105 @@ const PricingPlan = () => {
 
   const handleClick = async (e, plan) => {
     const clickedId = e.target.id;
-      const { client_secret: clientSecret } = await stripe_auth.paymentIntents.create({
-        amount:Number(plan.price)*100,
-        currency: 'usd',
-        automatic_payment_methods: {
-          enabled: true,
-        },
-      })
     
-    // // handle subscription action
     if (plan) {
-      // if(plan.id !==1) {
-        const url = `/${locale}/subscription/checkout?planId=${plan.id}&clientSecret=${clientSecret}`;
-        router.push(url);
-      // } else {
-      //   if (!session) {
-      //     setLoading(false);
-      //     return;
-      //   }
-      //   const user = session.user;
-      //   const userId = user?.id;
-      //   const description = "Subscription Upgrade From 'Free' to 'Basic'";
-      //   const amount = Number.parseFloat(plan.price);
-      //   const data = {
-      //     userId: userId,
-      //     description: description,
-      //     amount: amount,
-      //     status: 'Completed',
-      //   }
-      //   console.log(data)
-      //   const apiUrl = `/api/transaction`;
-      //   const res = await fetch(apiUrl, {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //     },
-      //     body: JSON.stringify(data),
-      //   });
-      //   const resData = await res.json();
-      //   if (res && res.ok) {
-      //     toast.success(resData.success.message, {
-      //       position: "top-right",
-      //       autoClose: 5000,
-      //       hideProgressBar: true,
-      //       closeOnClick: true,
-      //       pauseOnHover: true,
-      //       draggable: true,
-      //       progress: undefined,
-      //       theme: "light",
-      //     });
-      //     await handleSubscriptionAction(user, plan);
-      //   }
-      //   else {
-      //     toast.error(resData.error.message, {
-      //       position: "top-right",
-      //       autoClose: 5000,
-      //       hideProgressBar: true,
-      //       closeOnClick: true,
-      //       pauseOnHover: true,
-      //       draggable: true,
-      //       progress: undefined,
-      //       theme: "light",
-      //     });
-      //     setLoading(false);
-      //     return;
-      //   }
-      // } 
+      if(plan.id < currentPlanId) {
+        const user = session.user;
+        const data = { user, plan }
+        const res = await fetch('/api/subscription', {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+          credentials: 'include',
+          });
+          const obj = await res.json();
+
+          if (res && res.ok) {
+            getCurrentPlanId();
+            toast.success(obj.success.message, {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+            });
+          }
+
+      } 
+      else {
+        if(plan.id !==1) {
+        const { client_secret: clientSecret } = await stripe_auth.paymentIntents.create({
+          amount:Number(plan.price)*100,
+          currency: 'usd',
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        })
+          const url = `/${locale}/subscription/checkout?planId=${plan.id}&clientSecret=${clientSecret}`;
+          router.push(url);
+        } else {
+          if (!session) {
+            setLoading(false);
+            return;
+          }
+          const user = session.user;
+          const userId = user?.id;
+          const description = "Subscription Upgrade From 'Free' to 'Basic'";
+          const amount = Number.parseFloat(plan.price);
+          const data = {
+            userId: userId,
+            description: description,
+            amount: amount,
+            status: 'Completed',
+          }
+          const apiUrl = `/api/transaction`;
+          const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+          const resData = await res.json();
+          if (res && res.ok) {
+            toast.success(resData.success.message, {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: true,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+              theme: "light",
+            });
+            await handleSubscriptionAction(user, plan);
+          }
+          else {
+            toast.error(resData.error.message, {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: true,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+              progress: undefined,
+              theme: "light",
+            });
+            setLoading(false);
+            return;
+          }
+        } 
+      }
     }
-    // setLoading(false);
+    setLoading(false);
   }
 
-
   useEffect(() => {
-    getCurrentPlanId();
-
     async function fetchData() {
       const res = await fetch('/api/plan');
       if (res && res.ok) {
@@ -175,7 +211,7 @@ const PricingPlan = () => {
     }
     
     fetchData();
-  }, [getCurrentPlanId, status, session]);
+  }, [status, session]);
 
   return (
     <section
@@ -227,7 +263,7 @@ const PricingPlan = () => {
                         ${plan.price}
                       </Typography>
                       <Typography color='text.disabled' className='font-medium'>
-                        / {plan.durationDays} Days
+                        / month
                       </Typography>
                     </div>
                   </div>
