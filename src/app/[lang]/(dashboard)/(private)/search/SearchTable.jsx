@@ -71,7 +71,6 @@ const SearchTable = () => {
         const res = await response.json();
         const data = [];
         data.push(getFormattedData(JSON.parse(res.data)));
-        console.log(data);
         setData(data);
       }
     } catch (error) {

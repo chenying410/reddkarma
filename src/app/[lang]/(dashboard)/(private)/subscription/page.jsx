@@ -133,7 +133,7 @@ const PricingPlan = () => {
 
       } 
       else {
-        if(plan.id !==1) {
+        // if(plan.id !==1) {
         const { client_secret: clientSecret } = await stripe_auth.paymentIntents.create({
           amount:Number(plan.price)*100,
           currency: 'usd',
@@ -143,58 +143,59 @@ const PricingPlan = () => {
         })
           const url = `/${locale}/subscription/checkout?planId=${plan.id}&clientSecret=${clientSecret}`;
           router.push(url);
-        } else {
-          if (!session) {
-            setLoading(false);
-            return;
-          }
-          const user = session.user;
-          const userId = user?.id;
-          const description = "Subscription Upgrade From 'Free' to 'Basic'";
-          const amount = Number.parseFloat(plan.price);
-          const data = {
-            userId: userId,
-            description: description,
-            amount: amount,
-            status: 'Completed',
-          }
-          const apiUrl = `/api/transaction`;
-          const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-          const resData = await res.json();
-          if (res && res.ok) {
-            toast.success(resData.success.message, {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: true,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "light",
-            });
-            await handleSubscriptionAction(user, plan);
-          }
-          else {
-            toast.error(resData.error.message, {
-              position: "top-right",
-              autoClose: 5000,
-              hideProgressBar: true,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: "light",
-            });
-            setLoading(false);
-            return;
-          }
-        } 
+        // }
+        //  else {
+        //   if (!session) {
+        //     setLoading(false);
+        //     return;
+        //   }
+        //   const user = session.user;
+        //   const userId = user?.id;
+        //   const description = "Subscription Upgrade From 'Free' to 'Basic'";
+        //   const amount = Number.parseFloat(plan.price);
+        //   const data = {
+        //     userId: userId,
+        //     description: description,
+        //     amount: amount,
+        //     status: 'Completed',
+        //   }
+        //   const apiUrl = `/api/transaction`;
+        //   const res = await fetch(apiUrl, {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify(data),
+        //   });
+        //   const resData = await res.json();
+        //   if (res && res.ok) {
+        //     toast.success(resData.success.message, {
+        //       position: "top-right",
+        //       autoClose: 5000,
+        //       hideProgressBar: true,
+        //       closeOnClick: true,
+        //       pauseOnHover: true,
+        //       draggable: true,
+        //       progress: undefined,
+        //       theme: "light",
+        //     });
+        //     await handleSubscriptionAction(user, plan);
+        //   }
+        //   else {
+        //     toast.error(resData.error.message, {
+        //       position: "top-right",
+        //       autoClose: 5000,
+        //       hideProgressBar: true,
+        //       closeOnClick: true,
+        //       pauseOnHover: true,
+        //       draggable: true,
+        //       progress: undefined,
+        //       theme: "light",
+        //     });
+        //     setLoading(false);
+        //     return;
+        //   }
+        // } 
       }
     }
     setLoading(false);

@@ -10,15 +10,17 @@ import MenuItem from '@mui/material/MenuItem'
 import CustomTextField from '@core/components/mui/TextField'
 
 const TableFilters = ({ setData, tableData }) => {
+ 
   // States
   const [role, setRole] = useState('')
   const [plan, setPlan] = useState('')
   const [status, setStatus] = useState('')
 
   useEffect(() => {
+    console.log(tableData,plan)
     const filteredData = tableData?.filter(user => {
       if (role && user.role !== role) return false
-      if (plan && user.subscriptions[0].plan.name !== plan) return false
+      if (plan && user?.subscriptions?.[0]?.plan.name !== plan) return false
       if (status && user.subscriptions[0].status !== status) return false
 
       return true
